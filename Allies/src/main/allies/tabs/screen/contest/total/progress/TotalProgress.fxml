@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="15.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.allies.tabs.screen.contest.total.progress.TotalProgressController">
+   <children>
+      <Label text="Total Progress:" underline="true" />
+      <HBox spacing="15.0">
+         <children>
+            <Label text="Tasks Count:" />
+            <Label fx:id="tasksCountValueLabel" />
+         </children>
+      </HBox>
+      <HBox spacing="15.0">
+         <children>
+            <Label text="Created Tasks Count:" />
+            <Label fx:id="createdTasksCountValueLabel" />
+         </children>
+      </HBox>
+      <HBox spacing="15.0">
+         <children>
+            <Label text="Completed Tasks Count:" />
+            <Label fx:id="completedTasksCountValueLabel" />
+         </children>
+      </HBox>
+      <fx:include fx:id="winnerMessage" source="winnerMessage/WinnerMessage.fxml" />
+   </children>
+</VBox>

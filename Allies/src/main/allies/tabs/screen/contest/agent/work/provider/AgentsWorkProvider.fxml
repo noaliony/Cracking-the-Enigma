@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox alignment="TOP_CENTER" spacing="15.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.allies.tabs.screen.contest.agent.work.provider.AgentsWorkProviderController">
+   <children>
+      <Label text="Details Of Active Agents And Their Work Provider:" textAlignment="CENTER" underline="true" />
+      <TableView fx:id="tasksResultsDetailsTableView" prefHeight="200.0">
+        <columns>
+          <TableColumn fx:id="agentNameCol" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="120.0" text="Agent Name" />
+          <TableColumn fx:id="tasksCountRegisteredCol" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="170.0" text="Tasks Count Registered" />
+            <TableColumn fx:id="remainingTasksCol" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="160.0" text="Remaining Tasks" />
+            <TableColumn fx:id="candidatesCountCol" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="170.0" text="Candidates Count" />
+        </columns>
+      </TableView>
+   </children>
+</VBox>

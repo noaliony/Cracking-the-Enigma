@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane fitToHeight="true" fitToWidth="true" maxHeight="-Infinity" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.uboat.tabs.screen.machine.code.calibration.manual.plug.board.PlugBoardController">
+   <content>
+      <HBox spacing="15.0">
+         <children>
+            <VBox focusTraversable="true" spacing="10.0">
+               <children>
+                  <Label text="Please choose plug pair to use:" />
+                  <HBox spacing="10.0">
+                     <children>
+                        <ComboBox fx:id="plugOneComboBox" />
+                        <ComboBox fx:id="plugTwoComboBox" />
+                        <Button fx:id="addPlugPairButton" mnemonicParsing="false" onAction="#addPlugPairButtonAction" text="Add Plug Pair" />
+                     </children>
+                  </HBox>
+                  <Label fx:id="messagePlugPairsOverLabel" alignment="CENTER" minHeight="-Infinity" text="You Can't Add More Plug Pairs" textAlignment="CENTER" textFill="#d00d0d" />
+                  <Button fx:id="clearConfigurationButton" mnemonicParsing="false" text="Clear" />
+               </children>
+            </VBox>
+            <VBox>
+               <children>
+                  <Label maxWidth="1.7976931348623157E308" text="The Plug Pairs You Added:">
+                     <VBox.margin>
+                        <Insets />
+                     </VBox.margin></Label>
+                  <ScrollPane fitToHeight="true" fitToWidth="true">
+                     <content>
+                        <VBox fx:id="addedPlugPairsVBox" minHeight="-Infinity" minWidth="-Infinity">
+                           <padding>
+                              <Insets left="15.0" />
+                           </padding></VBox>
+                     </content>
+                  </ScrollPane>
+               </children>
+            </VBox>
+         </children>
+      </HBox>
+   </content>
+</ScrollPane>

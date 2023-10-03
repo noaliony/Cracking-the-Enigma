@@ -1,12 +1,13 @@
 package decryption.manager;
 
-import java.util.concurrent.ArrayBlockingQueue;
+import dto.TaskResult;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-public class TaskResultReader extends Thread{
+public class TaskResultReader extends Thread {
 
     private BlockingQueue<TaskResult> tasksResultBlockingQueue;
     private Consumer<TaskResult> taskResultAchieved;
@@ -30,7 +31,8 @@ public class TaskResultReader extends Thread{
             while (readTasksCount < tasksCount) {
                 TaskResult taskResult = tasksResultBlockingQueue.take();
 
-                taskResultAchieved.accept(taskResult);
+                //check if this result contains the win string
+                taskResultAchieved.accept(taskResult); //create a new consumer
                 readTasksCount++;
             }
             tasksPool.shutdown();

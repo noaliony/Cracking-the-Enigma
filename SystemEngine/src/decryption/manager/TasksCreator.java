@@ -1,21 +1,24 @@
 package decryption.manager;
 
+import dto.TaskDetails;
 import enums.GameLevel;
 import enums.ReflectorID;
 import machine.Machine;
-import machine.details.ConfigurationDetails;
+import dto.ConfigurationDetails;
 import org.paukov.combinatorics3.Generator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static enums.GameLevel.*;
+
 public class TasksCreator extends Thread {
 
-    private BlockingQueue<Runnable> tasksBlockingQueue;
+    private BlockingQueue<TaskDetails> taskDetailsBlockingQueue;
     private final GameLevel gameLevel;
     private final ConfigurationDetails receivedConfigurationDetails;
     private final int taskSize;
@@ -25,32 +28,23 @@ public class TasksCreator extends Thread {
     private final int rotorsCountOptional;
     private final List<Character> alphabet;
     private final int tasksCount;
-    private Map<Integer, Machine> machineForAnyAgent;
-    private final int amountOfAgents;
-    private BlockingQueue<TaskResult> tasksResultBlockingQueue;
-    private int tasksCreated = 0;
-    private Runnable pauseThreadRunnable;
+    private int tasksDetailsCreated = 0;
 
     public TasksCreator(GameLevel gameLevel, ConfigurationDetails receivedConfigurationDetails, int taskSize,
-                        Machine machine, BlockingQueue<Runnable> tasksBlockingQueue, String messageToDecode, int tasksCount,
-                        Map<Integer, Machine> machineForAnyAgent, int amountOfAgents,
-                        BlockingQueue<TaskResult> tasksResultBlockingQueue, Runnable pauseThreadRunnable) {
+                        Machine machine, BlockingQueue<TaskDetails> taskDetailsBlockingQueue, String messageToDecode,
+                        int tasksCount) {
         setName("Tasks Creator");
         setDaemon(true);
         this.gameLevel = gameLevel;
         this.receivedConfigurationDetails = receivedConfigurationDetails;
         this.taskSize = taskSize;
         this.machine = machine;
-        this.tasksBlockingQueue = tasksBlockingQueue;
+        this.taskDetailsBlockingQueue = taskDetailsBlockingQueue;
         this.messageToDecode = messageToDecode;
         this.rotorsCountOptional = machine.getAmountOfRotorsInRepository();
         this.rotorsCount = machine.getRotorsCount();
         this.alphabet = machine.getAlphabet();
         this.tasksCount = tasksCount;
-        this.machineForAnyAgent = machineForAnyAgent;
-        this.amountOfAgents = amountOfAgents;
-        this.tasksResultBlockingQueue = tasksResultBlockingQueue;
-        this.pauseThreadRunnable = pauseThreadRunnable;
     }
 
     @Override
@@ -71,10 +65,9 @@ public class TasksCreator extends Thread {
 
     private void easyGameLevel(){
         List<List<Character>> permutationsOfStartPosition = getPermutationsOfStartPosition();
-        List<ConfigurationDetails> configurationDetailsList = new ArrayList<>();
 
-        for (int i = 0; i < permutationsOfStartPosition.size(); i++){
-            createTask(i, permutationsOfStartPosition, configurationDetailsList, receivedConfigurationDetails.getRotorIDs(),
+        for (int i = 0; i < permutationsOfStartPosition.size(); i += taskSize){
+            createTaskDetails(i, permutationsOfStartPosition, receivedConfigurationDetails.getRotorIDs(),
                     receivedConfigurationDetails.getReflectorID());
         }
     }
@@ -82,11 +75,10 @@ public class TasksCreator extends Thread {
     private void mediumGameLevel(){
         List<List<Character>> permutationsOfStartPosition = getPermutationsOfStartPosition();
         List<ReflectorID> optionalReflectorIDsList = getOptionalReflectorIDsList();
-        List<ConfigurationDetails> configurationDetailsList = new ArrayList<>();
 
         for (ReflectorID reflectorID : optionalReflectorIDsList){
-            for (int i = 0; i < permutationsOfStartPosition.size(); i++){
-                createTask(i, permutationsOfStartPosition, configurationDetailsList, receivedConfigurationDetails.getRotorIDs(), reflectorID);
+            for (int i = 0; i < permutationsOfStartPosition.size(); i += taskSize){
+                createTaskDetails(i, permutationsOfStartPosition, receivedConfigurationDetails.getRotorIDs(), reflectorID);
             }
         }
     }
@@ -95,46 +87,84 @@ public class TasksCreator extends Thread {
         List<List<Integer>> optionalRotorIDsList = getOptionalRotorIDsList();
         List<List<Character>> permutationsOfStartPosition = getPermutationsOfStartPosition();
         List<ReflectorID> optionalReflectorIDsList = getOptionalReflectorIDsList();
-        List<ConfigurationDetails> configurationDetailsList = new ArrayList<>();
 
         for (List<Integer> currentRotorIDs : optionalRotorIDsList){
             for (ReflectorID reflectorID : optionalReflectorIDsList){
-                for (int i = 0; i < permutationsOfStartPosition.size(); i++){
-                    createTask(i, permutationsOfStartPosition, configurationDetailsList, currentRotorIDs, reflectorID);
+                for (int i = 0; i < permutationsOfStartPosition.size(); i += taskSize) {
+                    createTaskDetails(i, permutationsOfStartPosition, currentRotorIDs, reflectorID);
                 }
             }
         }
     }
 
-    private void createTask(int index, List<List<Character>> permutationsOfStartPosition, List<ConfigurationDetails> configurationDetailsList, List<Integer> rotorIDsList, ReflectorID reflectorID){
-        List<Character> currentListOfStartPosition = permutationsOfStartPosition.get(index);
+    private void createTaskDetails(int index, List<List<Character>> permutationsOfStartPosition,
+                                   List<Integer> rotorIDsList, ReflectorID reflectorID) {
 
-        ConfigurationDetails configurationDetails = new ConfigurationDetails(rotorIDsList, currentListOfStartPosition,
-                reflectorID, receivedConfigurationDetails.getPlugPairs());
+        List<Character> currentListOfStartPosition = new ArrayList<>(permutationsOfStartPosition.get(index));
+        ConfigurationDetails startConfiguration = new ConfigurationDetails(new ArrayList<>(rotorIDsList), new ArrayList<>(currentListOfStartPosition),
+                reflectorID, new HashMap<>(receivedConfigurationDetails.getPlugPairs()));
+        TaskDetails taskDetails = null;
 
-        configurationDetailsList.add(configurationDetails);
-        if (configurationDetailsList.size() == taskSize || index == permutationsOfStartPosition.size()) {
-            SingleTask task = new SingleTask(configurationDetailsList, messageToDecode, machineForAnyAgent, amountOfAgents,
-                    tasksResultBlockingQueue, pauseThreadRunnable);
+        if (index + taskSize > permutationsOfStartPosition.size()) {
+            int smallTaskSize = permutationsOfStartPosition.size() - index;
 
-            tasksCreated++;
-            configurationDetailsList.clear();
+            taskDetails = new TaskDetails(startConfiguration, smallTaskSize);
+        } else {
+            taskDetails = new TaskDetails(startConfiguration, taskSize);
+        }
+        tasksDetailsCreated++;
+        synchronized (taskDetailsBlockingQueue) {
             try {
-                tasksBlockingQueue.put(task);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                taskDetailsBlockingQueue.put(taskDetails);
+            } catch (InterruptedException exception) {
+                throw new RuntimeException(exception);
             }
         }
     }
 
     private List<List<Character>> getPermutationsOfStartPosition(){
-        List<List<Character>> permutations = Generator
+        int amountOfPermutations = (int) Generator
                 .permutation(alphabet)
                 .withRepetitions(rotorsCount)
-                .stream()
-                .collect(Collectors.<List<Character>>toList());
+                .stream().count();
+
+        List<List<Character>> permutations = new ArrayList<>(new ArrayList<>());
+        List<Character> currentPermutation = new ArrayList<>();
+
+        for (int i = 0; i < rotorsCount; i++) {
+            currentPermutation.add(alphabet.get(0));
+        }
+
+        for (int i = 0; i < amountOfPermutations; i++) {
+            permutations.add(currentPermutation);
+            currentPermutation = getNextPermutation(currentPermutation);
+        }
 
         return permutations;
+    }
+
+    private List<Character> getNextPermutation(List<Character> currentPermutation) {
+        List<Character> startPosition = new ArrayList<>(currentPermutation);
+        int currentIndex = startPosition.size() - 1;
+
+        while (currentIndex != -1) {
+            Character nextKey = getNextKey(startPosition.get(currentIndex));
+
+            startPosition.set(currentIndex, nextKey);
+            if (nextKey.equals(machine.getAlphabet().get(0))) {
+                currentIndex--;
+            } else {
+                currentIndex = -1;
+            }
+        }
+
+        return startPosition;
+    }
+
+    private Character getNextKey(Character character) {
+        List<Character> alphabet = machine.getAlphabet();
+
+        return alphabet.indexOf(character) == alphabet.size() - 1 ? alphabet.get(0) : alphabet.get(alphabet.indexOf(character) + 1);
     }
 
     private List<ReflectorID> getOptionalReflectorIDsList(){
@@ -144,12 +174,12 @@ public class TasksCreator extends Thread {
     private List<List<Integer>> getOptionalRotorIDsList() {
         List<List<Integer>> optionalRotorIDsList = new ArrayList<>();
 
-        if (gameLevel == GameLevel.DIFFICULT) {
+        if (gameLevel == DIFFICULT) {
             optionalRotorIDsList.addAll(Generator.permutation(receivedConfigurationDetails.getRotorIDs())
                     .simple()
                     .stream()
                     .collect(Collectors.toList()));
-        } else if (gameLevel == GameLevel.IMPOSSIBLE) {
+        } else if (gameLevel == IMPOSSIBLE) {
             Generator.combination(IntStream.range(1, machine.getAmountOfRotorsInRepository() + 1).boxed().collect(Collectors.toList()))
                     .simple(machine.getRotorsCount())
                     .stream()
@@ -162,5 +192,9 @@ public class TasksCreator extends Thread {
         }
 
         return optionalRotorIDsList;
+    }
+
+    public int getCreatedTasksCount() {
+        return tasksDetailsCreated;
     }
 }

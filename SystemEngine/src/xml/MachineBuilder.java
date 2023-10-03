@@ -4,6 +4,7 @@ import components.PlugBoard;
 import components.Reflector;
 import components.Repository;
 import components.Rotor;
+import enums.GameLevel;
 import enums.ReflectorID;
 import machine.*;
 
@@ -23,8 +24,11 @@ public class MachineBuilder {
         Repository repository = createRepository();
         List<Character> excludeChars = createExcludeCharsList();
         Set<String> dictionary = createDictionary(excludeChars);
-        int maxValueAgentsCount = cteEnigma.getCTEDecipher().getAgents();
-        Machine machineResult = new Machine(alphabet, plugBoard, rotorsCount, repository, excludeChars, dictionary, maxValueAgentsCount);
+        String gameLevelString = cteEnigma.getCTEBattlefield().getLevel().trim().toUpperCase();
+        GameLevel gameLevel = GameLevel.convertStringToGameLevel(gameLevelString);
+        String gameTitle = cteEnigma.getCTEBattlefield().getBattleName();
+        int alliesCount = cteEnigma.getCTEBattlefield().getAllies();
+        Machine machineResult = new Machine(alphabet, plugBoard, rotorsCount, repository, excludeChars, dictionary, gameLevel, gameTitle, alliesCount);
 
         machineResult.initializeMachineDetailsObject();
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+
+
+<TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.allies.tabs.screen.TabScreenController">
+    <Tab fx:id="dashboardTab" text="Dashboard">
+        <fx:include fx:id="dashboard" source="dashboard/Dashboard.fxml" />
+    </Tab>
+    <Tab fx:id="contestTab" text="Contest">
+        <fx:include fx:id="contest" source="../../../../main/allies/tabs/screen/contest/Contest.fxml" />
+    </Tab>
+</TabPane>

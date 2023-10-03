@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+
+<GridPane hgap="10.0" maxWidth="-Infinity" vgap="5.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.uboat.tabs.screen.machine.details.view.MachineDetailsViewController">
+   <columnConstraints>
+      <ColumnConstraints hgrow="SOMETIMES" />
+      <ColumnConstraints hgrow="SOMETIMES" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints vgrow="SOMETIMES" />
+      <RowConstraints vgrow="SOMETIMES" />
+      <RowConstraints vgrow="SOMETIMES" />
+      <RowConstraints vgrow="SOMETIMES" />
+      <RowConstraints vgrow="SOMETIMES" />
+   </rowConstraints>
+   <children>
+      <Label text="Machine details" underline="true" />
+      <Label maxWidth="-Infinity" text="1. Amount of rotors in use: " GridPane.rowIndex="1" />
+      <Label maxWidth="-Infinity" text="    Possible amount of rotors: " GridPane.rowIndex="2" />
+      <Label maxWidth="-Infinity" text="2. Amount of reflectors: " GridPane.rowIndex="3" />
+      <Label maxWidth="-Infinity" text="3. Amount of is encoded messages: " GridPane.rowIndex="4" />
+      <Label fx:id="amountOfRotorsInUseValueLabel" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+      <Label fx:id="possibleAmountOfRotorsValueLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+      <Label fx:id="amountOfReflectorsValueLabel" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+      <Label fx:id="amountOfIsEncodedMessagesValueLabel" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+   </children>
+   <padding>
+      <Insets left="10.0" />
+   </padding>
+</GridPane>

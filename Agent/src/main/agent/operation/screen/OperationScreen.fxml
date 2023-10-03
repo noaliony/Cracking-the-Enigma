@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.agent.operation.screen.OperationScreenController">
+   <content>
+      <VBox alignment="TOP_CENTER" spacing="15.0">
+         <children>
+            <HBox alignment="TOP_CENTER" spacing="15.0">
+               <children>
+                  <Label text="Is Connected To Contest:" />
+                  <Label fx:id="isConnectedToContestValueLabel" text="Not Yet!" />
+               </children>
+            </HBox>
+            <HBox fx:id="contestStatusHBox" alignment="TOP_CENTER" spacing="15.0" visible="false">
+               <children>
+                  <Label text="Status Contest:" />
+                  <Label fx:id="statusContestValueLabel" text="The Contest Is Not Active" />
+               </children>
+            </HBox>
+            <fx:include fx:id="data" source="data/Data.fxml" />
+            <fx:include fx:id="winnerMessage" source="winnerMessage/WinnerMessage.fxml" />
+         </children>
+      </VBox>
+   </content>
+</ScrollPane>

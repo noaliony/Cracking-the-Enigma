@@ -1,85 +1,50 @@
 package decryption.manager;
 
+import dto.*;
 import enums.GameLevel;
 import machine.Machine;
-import machine.details.ConfigurationDetails;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
+
+import static com.sun.webkit.graphics.WCRenderQueue.MAX_QUEUE_SIZE;
 
 public class DecryptionManager {
 
-    private int MAX_QUEUE_SIZE = 1000;
-    private int amountOfAgents;
     private Machine machine;
-    private final int taskSize;
-    private List<StringDecryptedCandidate> stringDecryptedList;
-    private BlockingQueue<Runnable> tasksBlockingQueue = new ArrayBlockingQueue<>(MAX_QUEUE_SIZE);
-    private BlockingQueue<TaskResult> tasksResultBlockingQueue = new LinkedBlockingQueue<>();
     private TasksCreator tasksCreator;
-    private Map<Integer, Machine> machineForAnyAgent;
-    private final GameLevel gameLevel;
-    private TaskResultReader taskResultReader;
+    private BlockingQueue<TaskDetails> taskDetailsBlockingQueue = new ArrayBlockingQueue<>(MAX_QUEUE_SIZE);
+    private GameLevel gameLevel;
     private ConfigurationDetails receivedConfigurationDetails;
     private String messageToEncode;
     private String messageToDecode;
-    private double allTasksTimeAverage = 0;
+    private int taskSize;
     private int tasksCount;
-    private ThreadPoolExecutor tasksPool;
-    private boolean isPauseButtonClicked = false;
-    private StringDecryptedCandidate winningStringDecryptedCandidate = null;
 
-    public DecryptionManager(DMInformationFromUser informationFromUser, Machine machine){
-        this.amountOfAgents = informationFromUser.getAmountOfAgents();
-        this.gameLevel = informationFromUser.getGameLevel();
-        this.taskSize = informationFromUser.getTaskSize();
-        this.messageToDecode = informationFromUser.getMessageToDecode();
-        this.messageToEncode = informationFromUser.getMessageToEncode();
+    public DecryptionManager(DMInformation information, Machine machine) {
+        setDataMembers(information, machine);
+        tasksCount = calculateTasksCount();
+        tasksCreator = new TasksCreator(gameLevel, receivedConfigurationDetails, taskSize,
+                machine, taskDetailsBlockingQueue, messageToDecode, tasksCount);
+    }
+
+    private void setDataMembers(DMInformation information, Machine machine) {
+        this.gameLevel = information.getGameLevel();
+        this.taskSize = information.getTaskSize();
+        this.messageToDecode = information.getMessageToDecode();
+        this.messageToEncode = information.getMessageToEncode();
         this.machine = machine;
         this.receivedConfigurationDetails = machine.getConfigurationDetails();
-        tasksCount = calculateTasksCount();
-        createMachineForAnyAgent();
-        tasksPool = new ThreadPoolExecutor(amountOfAgents, amountOfAgents, Integer.MAX_VALUE, TimeUnit.SECONDS, tasksBlockingQueue);
-        tasksCreator = new TasksCreator(gameLevel, receivedConfigurationDetails, taskSize,
-                machine, tasksBlockingQueue, messageToDecode, tasksCount, machineForAnyAgent, amountOfAgents, tasksResultBlockingQueue, this::pauseAllThreads);
-        taskResultReader = new TaskResultReader(tasksResultBlockingQueue, informationFromUser.getTaskResultConsumer(), tasksCount, tasksPool);
     }
 
     public int getTasksCount() {
         return tasksCount;
     }
 
-    public void setPauseButtonClicked(boolean pauseButtonClicked) {
-        isPauseButtonClicked = pauseButtonClicked;
-    }
-
-    public void runDM(){
-        tasksPool.prestartAllCoreThreads();
-        tasksCreator.start();
-        taskResultReader.start();
-
-        try {
-            tasksPool.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
-        } catch (InterruptedException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
-    public ConfigurationDetails getReceivedConfigurationDetails() {
-        return receivedConfigurationDetails;
-    }
-
-    public String getMessageToEncode() {
-        return messageToEncode;
-    }
-
-    public void createMachineForAnyAgent(){
-        machineForAnyAgent = new HashMap<>();
-        for (int i = 1; i <= amountOfAgents; i++) {
-            machineForAnyAgent.put(i, machine.clone());
-        }
+    public int getCreatedTasksCount() {
+        return tasksCreator.getCreatedTasksCount();
     }
 
     private int calculateTasksCount() {
@@ -121,26 +86,23 @@ public class DecryptionManager {
         return result;
     }
 
-    public void pauseAllThreads() {
-        if (isPauseButtonClicked) {
-            synchronized (this) {
-                try {
-                    this.wait();
-                } catch (InterruptedException ignored){
+    public List<TaskDetails> getListOfTaskDetails(int tasksCount) {
+        List<TaskDetails> taskDetailsList = new ArrayList<>();
 
-                }
+        for (int i = 0; i < tasksCount && !taskDetailsBlockingQueue.isEmpty(); i++) {
+            try {
+                TaskDetails taskDetails = taskDetailsBlockingQueue.take();
+
+                taskDetailsList.add(taskDetails);
+            } catch (InterruptedException exception) {
+                throw new RuntimeException(exception);
             }
         }
+
+        return taskDetailsList;
     }
 
-    public void resumeAllThreads() {
-        synchronized (this) {
-            this.notifyAll();
-        }
+    public void runDM() {
+        tasksCreator.start();
     }
-
-    public void stopAllThreads() {
-        tasksPool.shutdownNow();
-    }
-
 }

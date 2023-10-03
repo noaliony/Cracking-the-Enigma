@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.VBox?>
+
+
+<ScrollPane xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.allies.tabs.screen.dashboard.DashboardController">
+   <content>
+      <VBox spacing="15.0">
+         <children>
+            <fx:include fx:id="teamsAgentData" source="teamsAgentData/TeamsAgentData.fxml" />
+            <fx:include fx:id="contestDataJoinAble" source="contestsData/ContestDataJoinAble.fxml" />
+         </children>
+      </VBox>
+   </content>
+</ScrollPane>

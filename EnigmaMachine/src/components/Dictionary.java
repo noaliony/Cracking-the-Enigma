@@ -17,7 +17,7 @@ public class Dictionary {
         return excludeChars;
     }
 
-    public Set<String> getDictionary() {
+    public Set<String> getDictionarySet() {
         return dictionary;
     }
 }

@@ -1,7 +1,4 @@
 package xml;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import enums.ReflectorID;
 import exceptions.*;
@@ -10,9 +7,6 @@ import generated.*;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.*;
 
@@ -21,13 +15,12 @@ public class ReadXML {
     private static String JAXB_XML_PACKAGE_NAME = "generated";
     private static CTEEnigma cteEnigma;
 
-    public static void fromXMLFileToObject(String pathXML) {
+    public static void fromXMLFileToObject(InputStream XMLFileInputStream) {
 
         try {
-            InputStream inputStream = new FileInputStream(new File(pathXML));
-            cteEnigma = deserializeFrom(inputStream);
+            cteEnigma = deserializeFrom(XMLFileInputStream);
 
-        } catch (JAXBException | FileNotFoundException exception) {
+        } catch (JAXBException exception){//| FileNotFoundException exception) {
             exception.printStackTrace();
         }
     }
@@ -39,19 +32,17 @@ public class ReadXML {
         return (CTEEnigma) unmarshaller.unmarshal(inputStream);
     }
 
-    public static boolean checkIfValidXMLFile(String pathXML) throws EnigmaLogicException {
+    public static boolean checkIfValidXMLFile(InputStream XMLFileInputStream, List<String> battleNameList) throws EnigmaLogicException {
 
-        Path path = Paths.get(pathXML);
-        boolean isValid = checkIfXMLFileExist(path);
+        boolean isValid = true;
 
-        isValid &= checkIfXMLFile(pathXML);
-        fromXMLFileToObject(pathXML);
-        isValid &= CTEMachineValidator();
+        fromXMLFileToObject(XMLFileInputStream);
+        isValid &= CTEMachineValidator(battleNameList);
 
         return isValid;
     }
 
-    private static boolean CTEMachineValidator() throws EnigmaLogicException {
+    private static boolean CTEMachineValidator(List<String> battleNameList) throws EnigmaLogicException {
 
         boolean resultValidator = checkIfDecipherPartExistInXMLFile();
 
@@ -60,18 +51,51 @@ public class ReadXML {
         resultValidator &= checkIfEveryRotorHaveUniqueID();
         resultValidator &= checkIfThereAreNoDoubleMappingsInTheRotors();
         resultValidator &= checkIfTheNotchIsValidInEveryRotor();
+        resultValidator &= checkIfThereIsRunningNumberInRotors();
         resultValidator &= checkIfEveryReflectorHaveUniqueID();
         resultValidator &= checkIfThereIsNoMappingBetweenLetterAndItselfInEveryReflector();
-        resultValidator &= checkIfAgentsCountIsValid();
+        resultValidator &= checkIfThereIsRunningNumberInReflector();
+        resultValidator &= checkIfBattleFieldPartExistInXMLFile();
+        resultValidator &= checkIfBattleNameExistInSystem(battleNameList);
 
         return resultValidator;
     }
 
-    private static boolean checkIfAgentsCountIsValid() throws InvalidAgentsCountException {
-        int agentsCount = cteEnigma.getCTEDecipher().getAgents();
+    private static boolean checkIfBattleNameExistInSystem(List<String> battleNameList) throws BattleNameIsAlreadyExistInSystem {
+        String battleName = cteEnigma.getCTEBattlefield().getBattleName();
 
-        if (agentsCount < 2 || agentsCount > 50){
-            throw new InvalidAgentsCountException();
+        if (battleNameList.contains(battleName)){
+            throw new BattleNameIsAlreadyExistInSystem(battleName);
+        }
+
+        return true;
+    }
+
+    private static boolean checkIfThereIsRunningNumberInReflector() throws ThereIsNotRunningNumberInReflectorsException {
+        List<CTEReflector> reflectorsList = cteEnigma.getCTEMachine().getCTEReflectors().getCTEReflector();
+        int maxReflectorID = 0;
+
+        for (CTEReflector currentReflector : reflectorsList){
+            if (ReflectorID.convertStringToInt(currentReflector.getId()) > maxReflectorID)
+                maxReflectorID = ReflectorID.convertStringToInt(currentReflector.getId());
+        }
+        if (maxReflectorID > reflectorsList.size()){
+            throw new ThereIsNotRunningNumberInReflectorsException();
+        }
+
+        return true;
+    }
+
+    private static boolean checkIfThereIsRunningNumberInRotors() throws ThereIsNotRunningNumberInRotorsException {
+        List<CTERotor> rotorsList = cteEnigma.getCTEMachine().getCTERotors().getCTERotor();
+        int maxRotorID = 0;
+
+        for (CTERotor currentRotor : rotorsList){
+            if (currentRotor.getId() > maxRotorID)
+                maxRotorID = currentRotor.getId();
+        }
+        if (maxRotorID > rotorsList.size()){
+            throw new ThereIsNotRunningNumberInRotorsException();
         }
 
         return true;
@@ -80,6 +104,14 @@ public class ReadXML {
     private static boolean checkIfDecipherPartExistInXMLFile() throws DecipherPartDoesNotExistInXMLFileException {
         if (cteEnigma.getCTEDecipher() == null){
             throw new DecipherPartDoesNotExistInXMLFileException();
+        }
+
+        return true;
+    }
+
+    private static boolean checkIfBattleFieldPartExistInXMLFile() throws BattleFieldPartDoesNotExistInXMLFileException {
+        if (cteEnigma.getCTEBattlefield() == null){
+            throw new BattleFieldPartDoesNotExistInXMLFileException();
         }
 
         return true;
@@ -260,28 +292,7 @@ public class ReadXML {
         return true;
     }
 
-    private static boolean checkIfXMLFile(String pathXML) throws FileISNotXMLException {
-
-        boolean isXMLFile = pathXML.endsWith(".xml");
-
-        if (!isXMLFile)
-            throw new FileISNotXMLException();
-
-        return true;
-    }
-
-    private static boolean checkIfXMLFileExist(Path pathXML) throws FileIsNotExistException {
-
-        boolean existXMLFile = Files.exists(pathXML);
-
-        if (!existXMLFile)
-            throw new FileIsNotExistException();
-
-        return true;
-    }
-
     public static CTEEnigma getCTEEnigma() {
-
         return cteEnigma;
     }
 

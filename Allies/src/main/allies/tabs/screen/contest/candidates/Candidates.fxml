@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+
+
+<VBox alignment="TOP_CENTER" spacing="15.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.allies.tabs.screen.contest.candidates.CandidatesController">
+   <children>
+      <Label text="Team’s Candidates:" underline="true" />
+      <TableView fx:id="decryptedCandidatesTableView" prefHeight="200.0">
+           <columns>
+               <TableColumn fx:id="decryptedMessageCol" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="150.0" text="Decrypted Message" />
+               <TableColumn fx:id="agentNameCol" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="100.0" text="Agent Name" />
+               <TableColumn fx:id="configurationCol" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="300.0" text="Configuration" />
+           </columns>
+       </TableView>
+   </children>
+</VBox>

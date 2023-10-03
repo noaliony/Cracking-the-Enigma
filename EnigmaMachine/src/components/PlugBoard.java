@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class PlugBoard implements Serializable {
+public class PlugBoard implements Serializable, Cloneable {
 
     private Map<Character, Character> plugPairs;
 
@@ -30,5 +30,18 @@ public class PlugBoard implements Serializable {
     public Map<Character, Character> getPlugPairs() {
 
         return plugPairs;
+    }
+
+    @Override
+    public PlugBoard clone() {
+        try {
+            PlugBoard clone = (PlugBoard) super.clone();
+
+            clone.plugPairs = new HashMap<>(plugPairs);
+
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 }

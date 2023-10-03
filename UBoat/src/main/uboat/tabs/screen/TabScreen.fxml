@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+
+
+<TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.uboat.tabs.screen.TabScreenController">
+   <Tab fx:id="machineTabButton" text="Machine">
+       <fx:include fx:id="machineTab" source="machine/Machine.fxml" />
+   </Tab>
+   <Tab text="Contest">
+       <fx:include fx:id="contestTab" source="contest/Contest.fxml" />
+   </Tab>
+</TabPane>

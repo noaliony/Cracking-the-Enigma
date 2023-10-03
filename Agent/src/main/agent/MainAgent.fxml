@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.agent.MainAgentController">
+    <content>
+        <VBox alignment="TOP_CENTER" spacing="15.0">
+            <children>
+                <fx:include source="title/AgentTitle.fxml" />
+            <Label fx:id="userName" textFill="#ff00aa">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+                <StackPane fx:id="agentPanel">
+               <children>
+                  <fx:include fx:id="loginAgent" source="login/LoginAgent.fxml" />
+                  <fx:include fx:id="operationScreen" source="operation/screen/OperationScreen.fxml" />
+               </children></StackPane>
+            </children>
+         <padding>
+            <Insets left="15.0" />
+         </padding>
+        </VBox>
+    </content>
+</ScrollPane>

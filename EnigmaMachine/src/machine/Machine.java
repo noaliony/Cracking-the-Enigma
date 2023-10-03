@@ -1,11 +1,12 @@
 package machine;
 import components.*;
 import components.Dictionary;
+import dto.ConfigurationDetails;
+import dto.MachineSetting;
+import enums.GameLevel;
 import enums.ReflectorID;
 import exceptions.MessageToEncodeIsNotValidException;
-import machine.details.ConfigurationDetails;
 import machine.details.MachineDetailsObject;
-import machine.details.MachineSetting;
 import machineHistory.MachineHistory;
 import machineHistory.ProcessedString;
 
@@ -18,7 +19,7 @@ public class Machine implements Serializable, Cloneable {
 
     private final KeyBoard keyBoard = new KeyBoard();
     private PlugBoard plugBoard;
-    private List<Rotor> rotorsListInUse;
+    private List<Rotor> rotorsListInUse = null;
     private Reflector reflectorInUse = new Reflector();
     private Repository repository;
     private MachineSetting originalMachineSetting = new MachineSetting();
@@ -34,17 +35,22 @@ public class Machine implements Serializable, Cloneable {
     private int amountOfIsEncodedMessages = 0;
     private final int rotorsCount;
     private boolean isCodeSet = false;
-    private int maxValueAgentsCount;
+    private GameLevel gameLevel;
+    private String battleName;
+    private int alliesCount;
+    private int maxValueAgentsCount; // צריך להיות מאותחל בצורה דינמית
 
-    public Machine (List<Character> alphabet, PlugBoard plugBoard, int rotorsCount, Repository repository,
-                    List<Character> excludeChars, Set<String> dictionary, int maxValueAgentsCount) {
+    public Machine(List<Character> alphabet, PlugBoard plugBoard, int rotorsCount, Repository repository,
+                   List<Character> excludeChars, Set<String> dictionary, GameLevel gameLevel, String battleName, int alliesCount) {
 
         keyBoard.setAlphabet(alphabet);
         this.plugBoard = plugBoard;
         this.rotorsCount = rotorsCount;
         this.repository = repository;
         this.dictionary = new Dictionary(excludeChars, dictionary);
-        this.maxValueAgentsCount = maxValueAgentsCount;
+        this.gameLevel = gameLevel;
+        this.battleName = battleName;
+        this.alliesCount = alliesCount;
     }
 
     public int getMaxValueAgentsCount() {
@@ -77,7 +83,7 @@ public class Machine implements Serializable, Cloneable {
         return currentProcessedString;
     }
 
-    public void setCode(ConfigurationDetails configurationDetails) {
+    public void setCodeConfiguration(ConfigurationDetails configurationDetails) {
         List<Integer> rotorIDsToUse = configurationDetails.getRotorIDs();
         List<Character> rotorStartPosition = configurationDetails.getStartPosition();
         ReflectorID reflectorID = configurationDetails.getReflectorID();
@@ -370,7 +376,7 @@ public class Machine implements Serializable, Cloneable {
         return isCodeSet;
     }
 
-    public void addMachineSetting() {
+    public void addMachineSettingToMachineHistory() {
 
         MachineSetting machineSetting = getOriginalMachineSetting();
         MachineHistory machineHistory;
@@ -384,7 +390,7 @@ public class Machine implements Serializable, Cloneable {
     public void initializeMachineDetailsObject() {
 
         machineDetailsObject.initializeMachineDetailsObject(getRotorsCount(), getAmountOfRotorsInRepository(),
-                getAmountOfReflectorsInRepository(), getAmountOfIsEncodedMessages());
+                getAmountOfReflectorsInRepository(), getAmountOfIsEncodedMessages(), getAlphabet());
     }
 
     public int getAmountOfRotorsInRepository() {
@@ -431,19 +437,22 @@ public class Machine implements Serializable, Cloneable {
             Machine newMachine = (Machine)super.clone();
 
             newMachine.repository = repository.clone();
-            newMachine.rotorsListInUse = new ArrayList<>();
-            for (Rotor realRotor: rotorsListInUse) {
-                for (Rotor cloneRotor : newMachine.repository.getRotorsList()) {
-                    if (cloneRotor.getID() == realRotor.getID()) {
-                        newMachine.rotorsListInUse.add(cloneRotor);
+            newMachine.plugBoard = plugBoard.clone();
+            if (rotorsListInUse != null) {
+                newMachine.rotorsListInUse = new ArrayList<>();
+                for (Rotor realRotor: rotorsListInUse) {
+                    for (Rotor cloneRotor : newMachine.repository.getRotorsList()) {
+                        if (cloneRotor.getID() == realRotor.getID()) {
+                            newMachine.rotorsListInUse.add(cloneRotor);
+                        }
                     }
                 }
+                newMachine.reflectorInUse = reflectorInUse.clone();
+                newMachine.originalMachineSetting = originalMachineSetting.clone();
+                newMachine.currentMachineSetting = currentMachineSetting.clone();
+                newMachine.currentIsEncodedStringList = new ArrayList<>(this.currentIsEncodedStringList);
+                newMachine.machineHistoryList = new ArrayList<>(this.machineHistoryList);
             }
-            newMachine.reflectorInUse = reflectorInUse.clone();
-            newMachine.originalMachineSetting = originalMachineSetting.clone();
-            newMachine.currentMachineSetting = currentMachineSetting.clone();
-            newMachine.currentIsEncodedStringList = new ArrayList<>(this.currentIsEncodedStringList);
-            newMachine.machineHistoryList = new ArrayList<>(this.machineHistoryList);
 
             return newMachine;
         } catch (CloneNotSupportedException e) {
@@ -470,11 +479,23 @@ public class Machine implements Serializable, Cloneable {
                 .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
                 .toString();
 
-        if (!dictionary.getDictionary().containsAll(asList(messageToEncodeAfter.split(" ")))){
+        if (!dictionary.getDictionarySet().containsAll(asList(messageToEncodeAfter.split(" ")))){
             throw new MessageToEncodeIsNotValidException();
         } else {
             return messageToEncodeAfter;
         }
+    }
+
+    public String getBattlefieldName() {
+        return battleName;
+    }
+
+    public int getAlliesCount() {
+        return alliesCount;
+    }
+
+    public GameLevel getGameLevel() {
+        return gameLevel;
     }
 }
 

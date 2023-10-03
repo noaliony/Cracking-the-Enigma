@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox fx:id="winnerStringDetailsVBox" spacing="15.0" visible="false" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.allies.tabs.screen.contest.total.progress.winnerMessage.WinnerMessageController">
+   <children>
+      <Label text="The Winner:" textFill="#ff0085" underline="true" />
+      <HBox spacing="15.0">
+         <children>
+            <Label text="String Dycrypted:" textFill="#ff00ae" />
+            <Label fx:id="stringDecryptedValueLabel" textFill="#ff00ce" />
+         </children>
+      </HBox>
+      <HBox spacing="15.0">
+         <children>
+            <Label text="Configuration Details:" textFill="#ff00ce" />
+            <Label fx:id="configurationDetailsValueLabel" textFill="#ff00ce" />
+         </children>
+      </HBox>
+      <HBox spacing="15.0">
+         <children>
+            <Label text="Ally Name:" textFill="#ff00ce" />
+            <Label fx:id="allyNameValueLabel" textFill="#ff00ce" />
+         </children>
+      </HBox>
+      <HBox spacing="15.0">
+         <children>
+            <Label text="Agent Name:" textFill="#ff00ce" />
+            <Label fx:id="agentNameValueLabel" textFill="#ff00ce" />
+         </children>
+      </HBox>
+   </children>
+</VBox>

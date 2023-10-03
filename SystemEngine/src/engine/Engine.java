@@ -1,24 +1,23 @@
 package engine;
 
+import battle.field.Battlefield;
+import components.Dictionary;
 import components.Rotor;
-import decryption.manager.DMInformationFromUser;
-import decryption.manager.DecryptionManager;
+import enums.GameLevel;
 import enums.ReflectorID;
 import exceptions.*;
 import machine.Machine;
-import machine.details.ConfigurationDetails;
+import dto.ConfigurationDetails;
 import machine.details.MachineDetailsObject;
-import machine.details.MachineSetting;
+import dto.MachineSetting;
 import machineHistory.MachineHistory;
 import machineHistory.ProcessedString;
+import users.UBoat;
 import xml.MachineBuilder;
 import xml.ReadXML;
 import generated.CTEEnigma;
 
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.InputStream;
 import java.time.Duration;
 import java.util.*;
 
@@ -26,27 +25,27 @@ public class Engine {
 
     private int MAX_NUMBERS_OF_ROTORS_IN_USE = 99;
     private Machine machine = null;
-    private DecryptionManager DM;
 
-    public void loadXMLFileToMachine(String pathXML) throws EnigmaLogicException {
-        machine = readSystemDetailsFile(pathXML);
+    public void loadXMLFileToMachine(InputStream XMLFileInputStream, List<String> battleNameList) throws EnigmaLogicException {
+        machine = readSystemDetailsFile(XMLFileInputStream, battleNameList);
     }
 
     public void updateManualSetting(){
         resetCurrentNotchAndPosition();
         manualSetting();
-        addMachineSetting();
+        addMachineSettingToMachineHistory();
     }
 
     public void updateAutomaticSetting(){
         resetCurrentNotchAndPosition();
         getRandomSetting();
-        addMachineSetting();
+        addMachineSettingToMachineHistory();
     }
 
-    public Machine readSystemDetailsFile(String pathXML) throws EnigmaLogicException {
+    public Machine readSystemDetailsFile(InputStream XMLFileInputStream, List<String> battleNameList) throws EnigmaLogicException {
 
-        boolean isValidFile =  ReadXML.checkIfValidXMLFile(pathXML);
+        boolean isValidFile =  ReadXML.checkIfValidXMLFile(XMLFileInputStream, battleNameList);
+
         MachineBuilder machineBuilder = new MachineBuilder();
         CTEEnigma cteEnigma = ReadXML.getCTEEnigma();
         Machine machine = machineBuilder.createMachineFromCTEEnigma(cteEnigma);
@@ -92,7 +91,7 @@ public class Engine {
         }
 
         configurationDetails = new ConfigurationDetails(rotorsIdToUse, rotorStartPosition, reflectorIdToUse, plugPairsToUse);
-        machine.setCode(configurationDetails);
+        machine.setCodeConfiguration(configurationDetails);
 
         rotorsNotch = updateNotchInRotorsInUse();
         machine.setRotorsNotchInOriginalAndCurrentMachineSetting(rotorsNotch);
@@ -112,21 +111,25 @@ public class Engine {
         Map<Character, Character> plugPairsToUse = getRandomPlugBoard();
         ConfigurationDetails configurationDetails = new ConfigurationDetails(rotorsIdToUse, rotorStartPosition, reflectorIdToUse, plugPairsToUse);
 
-        machine.setCode(configurationDetails);
+        machine.setCodeConfiguration(configurationDetails);
 
-        setMachineSetting(rotorsIdToUse, rotorStartPosition, reflectorIdToUse, plugPairsToUse);
+        setMachineSetting(configurationDetails);
     }
 
-    public void setMachineSetting(List<Integer> rotorsIdToUse, List<Character> rotorStartPosition,
-                                   ReflectorID reflectorIdToUse, Map<Character, Character> plugPairsToUse) {
+    public void setCodeConfiguration(ConfigurationDetails configurationDetails){
+        machine.setCodeConfiguration(configurationDetails);
+    }
 
-        String rotorsID = createStringIDRotors(rotorsIdToUse);
+    public void setMachineSetting(ConfigurationDetails configurationDetails) {
+
+        String rotorsID = createStringIDRotors(configurationDetails.getRotorIDs());
         String rotorsNotch = createRotorsNotch(rotorsID, getRotorsListInRepository());
-        String startingPosition = createStartingPosition(rotorStartPosition);
-        String reflectorID = reflectorIdToUse.toString();
-        String plugPairs = createPlugPairs(plugPairsToUse);
+        String startingPosition = createStartingPosition(configurationDetails.getStartPosition());
+        String reflectorID = configurationDetails.getReflectorID().toString();
+        String plugPairs = createPlugPairs(configurationDetails.getPlugPairs());
 
         setMachineSettingStringsParameters(rotorsID, rotorsNotch, startingPosition, reflectorID, plugPairs);
+        updateManualSetting();
     }
 
     private String createPlugPairs(Map<Character, Character> plugPairsToUse) {
@@ -363,9 +366,9 @@ public class Engine {
         machine.setMachineSetting(rotorsID, rotorsNotch, startingPosition, reflectorID, plugPairs);
     }
 
-    public void addMachineSetting() {
+    public void addMachineSettingToMachineHistory() {
 
-        machine.addMachineSetting();
+        machine.addMachineSettingToMachineHistory();
     }
 
     public void addProcessedStringToListInMachineHistory(String stringToEncodeFromUser, String stringOutput, Long nano) {
@@ -411,11 +414,6 @@ public class Engine {
         return machine.displayCurrentMachineSetting();
     }
 
-    public List<MachineHistory> getMachineHistory() {
-
-        return machine.getMachineHistoryList();
-    }
-
     public void resetCurrentCode() {
 
         machine.resetCurrentCode();
@@ -435,24 +433,6 @@ public class Engine {
         }
 
         return checkValidity;
-    }
-
-    public void checkFilePath(String xmlFilePath, String requiredFileExtension) throws RuntimeException {
-        Path filePath;
-
-        try {
-            filePath = Paths.get(xmlFilePath);
-        } catch (InvalidPathException e) {
-            throw new RuntimeException();
-        }
-
-        if (!Files.isRegularFile(filePath)) {
-            throw new RuntimeException();
-        }
-
-        if (!filePath.toString().endsWith(requiredFileExtension)) {
-            throw new RuntimeException();
-        }
     }
 
     public boolean isCodeSet(){
@@ -475,59 +455,23 @@ public class Engine {
         return machine;
     }
 
-    public int calculateTasksCount(DMInformationFromUser informationFromUser) throws MessageToEncodeIsNotValidException {
-        try {
-            String messageToEncode = validatorMessageToEncode(informationFromUser.getOriginalMessage());
-            String messageToDecode = encodingStringInput(messageToEncode, false);
-
-            informationFromUser.setMessageToEncode(messageToEncode);
-            informationFromUser.setMessageToDecode(messageToDecode);
-            DM = createDM(informationFromUser);
-
-            return DM.getTasksCount();
-        } catch (MessageToEncodeIsNotValidException exception) {
-            throw exception;
-        }
-    }
-
-    public DecryptionManager createDM(DMInformationFromUser informationFromUser){
-        return new DecryptionManager(informationFromUser, machine);
-    }
-
     public String validatorMessageToEncode(String messageToEncode) throws MessageToEncodeIsNotValidException {
         return machine.validatorMessageToEncode(messageToEncode);
     }
 
-    public void runDM() {
-        DM.runDM();
+    public Set<String> getDictionarySet() {
+        return machine.getDictionary().getDictionarySet();
     }
 
-    public String getMessageToEncodeFromDM() {
-        return DM.getMessageToEncode();
+    public Dictionary getDictionaryObject() {
+        return machine.getDictionary();
     }
 
-    public ConfigurationDetails getReceivedConfigurationDetailsFromDM() {
-        return DM.getReceivedConfigurationDetails();
-    }
+    public Battlefield createBattleField(String machineString, UBoat uBoat) {
+        String battlefieldName = machine.getBattlefieldName();
+        int alliesCount = machine.getAlliesCount();
+        GameLevel gameLevel = machine.getGameLevel();
 
-    public Set<String> getDictionary() {
-        return machine.getDictionary().getDictionary();
-    }
-
-    public int getMaxValueAgentsCount() {
-        return machine.getMaxValueAgentsCount();
-    }
-
-    public void resumeAllThreads() {
-        DM.setPauseButtonClicked(false);
-        DM.resumeAllThreads();
-    }
-
-    public void pauseAllThreads() {
-        DM.setPauseButtonClicked(true);
-    }
-
-    public void stopAllThreads(){
-        DM.stopAllThreads();
+        return new Battlefield(battlefieldName, alliesCount, gameLevel, machine, machineString, uBoat);
     }
 }

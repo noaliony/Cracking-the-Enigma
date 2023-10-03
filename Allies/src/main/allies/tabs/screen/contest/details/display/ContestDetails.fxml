@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="15.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.allies.tabs.screen.contest.details.display.ContestDetailsController">
+   <children>
+      <HBox spacing="15.0">
+         <children>
+            <Label text="Battlefield Name:" />
+            <Label fx:id="battlefieldNameValueLabel" />
+         </children>
+      </HBox>
+      <HBox spacing="15.0">
+         <children>
+            <Label text="UBoat Name:" />
+            <Label fx:id="uBoatNameValueLabel" />
+         </children>
+      </HBox>
+      <HBox spacing="15.0">
+         <children>
+            <Label text="Game Status:" />
+            <Label fx:id="gameStatusValueLabel" />
+         </children>
+      </HBox>
+      <HBox spacing="15.0">
+         <children>
+            <Label text="Game Level:" />
+            <Label fx:id="gameLevelValueLabel" />
+         </children>
+      </HBox>
+      <HBox spacing="15.0">
+         <children>
+            <Label text="Allies Count:" />
+            <Label fx:id="registeredAlliesCountValueLabel" text="0" />
+            <Label text="/" />
+            <Label fx:id="totalAlliesCountValueLabel" />
+         </children>
+      </HBox>
+   </children>
+   <padding>
+      <Insets right="100.0" />
+   </padding>
+</VBox>

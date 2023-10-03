@@ -9,5 +9,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="EnigmaMachine" exported="" />
     <orderEntry type="library" name="combinatoricslib3-3.3.3" level="project" />
+    <orderEntry type="module" module-name="DataTransferObject" />
   </component>
 </module>

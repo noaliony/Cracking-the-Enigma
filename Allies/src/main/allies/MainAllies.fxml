@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.allies.MainAlliesController">
+   <content>
+      <VBox alignment="TOP_CENTER" spacing="15.0">
+         <children>
+            <fx:include source="title/AlliesTitle.fxml" />
+            <Label fx:id="userName" textFill="#ff00a1">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <StackPane>
+               <children>
+                  <fx:include fx:id="loginAllies" source="login/Login.fxml" />
+                  <fx:include fx:id="tabScreen" source="tabs/screen/TabScreen.fxml" />
+               </children></StackPane>
+         </children>
+      </VBox>
+   </content>
+</ScrollPane>
