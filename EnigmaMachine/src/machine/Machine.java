@@ -1,59 +1,101 @@
 package machine;
-import com.sun.org.apache.bcel.internal.generic.RETURN;
 import components.*;
+import components.Dictionary;
 import enums.ReflectorID;
+import exceptions.MessageToEncodeIsNotValidException;
+import machine.details.ConfigurationDetails;
+import machine.details.MachineDetailsObject;
+import machine.details.MachineSetting;
 import machineHistory.MachineHistory;
 import machineHistory.ProcessedString;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class Machine implements Serializable {
+import static java.util.Arrays.asList;
 
-    private KeyBoard lightBulbKeyBoard;
-    private KeyBoard keyBoard = new KeyBoard();
+public class Machine implements Serializable, Cloneable {
+
+    private final KeyBoard keyBoard = new KeyBoard();
     private PlugBoard plugBoard;
     private List<Rotor> rotorsListInUse;
     private Reflector reflectorInUse = new Reflector();
-    private int rotorsCount;
     private Repository repository;
     private MachineSetting originalMachineSetting = new MachineSetting();
     private MachineSetting currentMachineSetting = new MachineSetting();
     private List<ProcessedString> currentIsEncodedStringList;
     private List<MachineHistory> machineHistoryList = new ArrayList<>();
+    private MachineHistory currentMachineHistory;
+    private final MachineDetailsObject machineDetailsObject = new MachineDetailsObject();
+    private ProcessedString currentProcessedString = new ProcessedString();
+    private Dictionary dictionary;
+    private ConfigurationDetails configurationDetails;
+    private long startTimeToEncodedString;
     private int amountOfIsEncodedMessages = 0;
-    boolean isCodeSet = false;
+    private final int rotorsCount;
+    private boolean isCodeSet = false;
+    private int maxValueAgentsCount;
 
-    public Machine (List<Character> alphabet, PlugBoard plugBoard, int rotorsCount, Repository repository) {
+    public Machine (List<Character> alphabet, PlugBoard plugBoard, int rotorsCount, Repository repository,
+                    List<Character> excludeChars, Set<String> dictionary, int maxValueAgentsCount) {
 
         keyBoard.setAlphabet(alphabet);
         this.plugBoard = plugBoard;
         this.rotorsCount = rotorsCount;
         this.repository = repository;
+        this.dictionary = new Dictionary(excludeChars, dictionary);
+        this.maxValueAgentsCount = maxValueAgentsCount;
+    }
+
+    public int getMaxValueAgentsCount() {
+        return maxValueAgentsCount;
+    }
+
+    public List<Character> getExcludeChars() {
+        return dictionary.getExcludeChars();
+    }
+
+    public Dictionary getDictionary() {
+        return dictionary;
+    }
+
+    public void resetStartTimeToEncodedString(){
+        startTimeToEncodedString = System.nanoTime();
+    }
+
+    public long getNanoSecondThatStringWasProcessed(){
+        long endTime = System.nanoTime();
+
+        return endTime - startTimeToEncodedString;
     }
 
     public int getRotorsCount() {
-
         return rotorsCount;
     }
 
-    public void setCode(List<Integer> rotorsIdToUse, List<Character> rotorStartPosition, ReflectorID reflectorID,
-    Map<Character,Character> plugPairs) {
+    public ProcessedString getCurrentProcessedString() {
+        return currentProcessedString;
+    }
 
+    public void setCode(ConfigurationDetails configurationDetails) {
+        List<Integer> rotorIDsToUse = configurationDetails.getRotorIDs();
+        List<Character> rotorStartPosition = configurationDetails.getStartPosition();
+        ReflectorID reflectorID = configurationDetails.getReflectorID();
+        Map<Character,Character> plugPairs = configurationDetails.getPlugPairs();
+
+        this.configurationDetails = configurationDetails;
         rotorsListInUse  = new ArrayList<>();
-        for(int i = rotorsIdToUse.size() - 1; i >= 0; i--) {
+        for(int i = rotorIDsToUse.size() - 1; i >= 0; i--) {
 
-            int idRotor = rotorsIdToUse.get(i);
+            int idRotor = rotorIDsToUse.get(i);
             rotorsListInUse.add(repository.getRotorByID(idRotor));
         }
 
-        for (int i = 0; i < rotorsIdToUse.size(); i++) {
+        for (int i = 0; i < rotorIDsToUse.size(); i++) {
             Rotor currentRotor = rotorsListInUse.get(i);
             int newNotch;
 
-            int index = currentRotor.getIndexInRightArrayByChar(rotorStartPosition.get(rotorsIdToUse.size() - i - 1));
+            int index = currentRotor.getIndexInRightArrayByChar(rotorStartPosition.get(rotorIDsToUse.size() - i - 1));
             currentRotor.setStartPosition(index);
             currentRotor.setCurrPosition(index);
             newNotch = moduloOperationToIndexBetweenRotors(currentRotor.getStartingNotch() - currentRotor.getCurrPosition() + 1);
@@ -67,7 +109,6 @@ public class Machine implements Serializable {
     }
 
     public char inputProcess(char charToEncodeFromUser){
-
         char newChar;
         int indexFromKeyBoard;
         int indexToKeyBoard;
@@ -97,8 +138,7 @@ public class Machine implements Serializable {
         return plugBoard.getValueByKey(newChar);
     }
 
-    private int moduloOperationToIndexBetweenRotors(int index)
-    {
+    private int moduloOperationToIndexBetweenRotors(int index) {
         if (index == keyBoard.getLength())
             return index;
         if (index == 0)
@@ -109,10 +149,9 @@ public class Machine implements Serializable {
         return  resultIndex;
     }
 
-    private int moduloOperationToIndexForKeyBoardAndReflector(int index)
-    {
+    private int moduloOperationToIndexForKeyBoardAndReflector(int index) {
         if (index == keyBoard.getLength())
-            return index--;
+            return --index;
 
         int resultIndex = (index < 0 ? index + keyBoard.getLength() : index % keyBoard.getLength());
 
@@ -120,7 +159,6 @@ public class Machine implements Serializable {
     }
 
     private int passingRotorsFromLeftToRight(int newIndexReflector) {
-
         char charToFind;
         int newIndex = newIndexReflector;
 
@@ -148,7 +186,6 @@ public class Machine implements Serializable {
     }
 
     private int passingRotorsFromRightToLeft(int indexFromKeyBoard) {
-
         char charToFind;
         int newIndex = indexFromKeyBoard;
 
@@ -177,12 +214,13 @@ public class Machine implements Serializable {
     }
 
     private void advanceNotch() {
-
        updateNotchAndCurrPosition(0);
 
         for (int i = 0; i < rotorsListInUse.size() - 1 ; i++) {
             if (rotorsListInUse.get(i).getNotch() == 1)
                 updateNotchAndCurrPosition(i+1);
+            else
+                break;
         }
     }
 
@@ -190,12 +228,6 @@ public class Machine implements Serializable {
 
         rotorsListInUse.get(index).advanceCurrPosition();
         rotorsListInUse.get(index).decreaseNotch();
-    }
-
-    public void print()
-    {
-        System.out.println(keyBoard.toString());
-        System.out.println(repository.toString());
     }
 
     public Map<Character, Character> getPlugPairs() {
@@ -216,22 +248,10 @@ public class Machine implements Serializable {
         return repository.getRotorsList();
     }
 
-    public void setMachineSetting(String rotorsID, String rotorsNotch, String startingPosition, String reflectorID, String plugPairs) {
+    public void setMachineSetting(String rotorIDs, String rotorNotches, String startingPosition, String reflectorID, String plugPairs) {
 
-        originalMachineSetting = new MachineSetting();
-        currentMachineSetting = new MachineSetting();
-
-        originalMachineSetting.setRotorsID(rotorsID);
-        originalMachineSetting.setRotorsNotch(rotorsNotch);
-        originalMachineSetting.setPosition(startingPosition);
-        originalMachineSetting.setReflectorID(reflectorID);
-        originalMachineSetting.setPlugPairs(plugPairs);
-
-        currentMachineSetting.setRotorsID(rotorsID);
-        currentMachineSetting.setRotorsNotch(rotorsNotch);
-        currentMachineSetting.setPosition(startingPosition);
-        currentMachineSetting.setReflectorID(reflectorID);
-        currentMachineSetting.setPlugPairs(plugPairs);
+        originalMachineSetting = new MachineSetting(rotorIDs, rotorNotches, startingPosition, reflectorID, plugPairs);
+        currentMachineSetting = new MachineSetting(rotorIDs, rotorNotches, startingPosition, reflectorID, plugPairs);
     }
 
     public MachineSetting getOriginalMachineSetting() {
@@ -245,12 +265,10 @@ public class Machine implements Serializable {
         String currentNotchesString = "";
         Character currentPosition;
         Integer notch;
-        int indexPosition;
 
         for (int i = rotorsCount - 1; i >= 0 ; i--) {
 
-            indexPosition = rotorsListInUse.get(i).getCurrPosition() - 1;
-            currentPosition = keyBoard.getAlphabet().get(indexPosition);
+            currentPosition = rotorsListInUse.get(i).getRightArray().get(rotorsListInUse.get(i).getCurrPosition());
             currentPositionsString = currentPositionsString.concat(currentPosition.toString());
         }
         currentMachineSetting.setPosition(currentPositionsString);
@@ -264,7 +282,7 @@ public class Machine implements Serializable {
                 currentNotchesString = currentNotchesString.concat(",");
 
         }
-        currentMachineSetting.setRotorsNotch(currentNotchesString);
+        currentMachineSetting.setRotorNotches(currentNotchesString);
     }
 
     public int getAmountOfReflectorsInRepository() {
@@ -284,8 +302,8 @@ public class Machine implements Serializable {
 
     public void setRotorsNotchInOriginalAndCurrentMachineSetting(String rotorsNotch) {
 
-        originalMachineSetting.setRotorsNotch(rotorsNotch);
-        currentMachineSetting.setRotorsNotch(rotorsNotch);
+        originalMachineSetting.setRotorNotches(rotorsNotch);
+        currentMachineSetting.setRotorNotches(rotorsNotch);
     }
 
     public String getNotchInRotorsInUseString() {
@@ -305,7 +323,7 @@ public class Machine implements Serializable {
 
         int newNotch;
 
-        currentMachineSetting.setRotorsNotch(originalMachineSetting.getRotorsNotch());
+        currentMachineSetting.setRotorNotches(originalMachineSetting.getRotorNotches());
         currentMachineSetting.setPosition(originalMachineSetting.getPosition());
         if (rotorsListInUse != null) {
             for (Rotor currentRotor : rotorsListInUse) {
@@ -359,7 +377,104 @@ public class Machine implements Serializable {
 
         currentIsEncodedStringList = new ArrayList<>();
         machineHistory = new MachineHistory(machineSetting, currentIsEncodedStringList);
+        currentMachineHistory = machineHistory;
         getMachineHistoryList().add(machineHistory);
+    }
+
+    public void initializeMachineDetailsObject() {
+
+        machineDetailsObject.initializeMachineDetailsObject(getRotorsCount(), getAmountOfRotorsInRepository(),
+                getAmountOfReflectorsInRepository(), getAmountOfIsEncodedMessages());
+    }
+
+    public int getAmountOfRotorsInRepository() {
+        return repository.getAmountOfRotors();
+    }
+
+    public MachineDetailsObject getMachineDetailsObject() {
+        return machineDetailsObject;
+    }
+
+    public MachineSetting getCurrentMachineSetting() {
+        return currentMachineSetting;
+    }
+
+    public void insertCurrentProcessedStringToMachineHistoryList() {
+        currentIsEncodedStringList.add(currentProcessedString);
+        updateCurrenProcessedStringInCurrentMachineHistory(currentProcessedString);
+        currentProcessedString = new ProcessedString();
+    }
+
+    public String encodeFullMessage(String stringToEncodeFromUser) {
+        Character outputChar;
+        String outputString = "";
+
+        for (int i = 0; i < stringToEncodeFromUser.length(); i++) {
+            outputChar = inputProcess(stringToEncodeFromUser.charAt(i));
+            outputString = outputString.concat(outputChar.toString());
+        }
+
+        return outputString;
+    }
+
+    public List<Character> getAlphabet() {
+        return keyBoard.getAlphabet();
+    }
+
+    public List<ReflectorID> getReflectorIDsInRepositoryList() {
+        return repository.getReflectorIDsList();
+    }
+
+    @Override
+    public Machine clone() {
+        try {
+            Machine newMachine = (Machine)super.clone();
+
+            newMachine.repository = repository.clone();
+            newMachine.rotorsListInUse = new ArrayList<>();
+            for (Rotor realRotor: rotorsListInUse) {
+                for (Rotor cloneRotor : newMachine.repository.getRotorsList()) {
+                    if (cloneRotor.getID() == realRotor.getID()) {
+                        newMachine.rotorsListInUse.add(cloneRotor);
+                    }
+                }
+            }
+            newMachine.reflectorInUse = reflectorInUse.clone();
+            newMachine.originalMachineSetting = originalMachineSetting.clone();
+            newMachine.currentMachineSetting = currentMachineSetting.clone();
+            newMachine.currentIsEncodedStringList = new ArrayList<>(this.currentIsEncodedStringList);
+            newMachine.machineHistoryList = new ArrayList<>(this.machineHistoryList);
+
+            return newMachine;
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void updateCurrenProcessedStringInCurrentMachineHistory(ProcessedString processedString) {
+        currentMachineHistory.setCurrentProcessedString(processedString);
+    }
+
+    public MachineHistory getCurrentMachineHistory() {
+        return currentMachineHistory;
+    }
+
+    public ConfigurationDetails getConfigurationDetails() {
+        return configurationDetails;
+    }
+
+    public String validatorMessageToEncode(String messageToEncode) throws MessageToEncodeIsNotValidException {
+        String messageToEncodeAfter = messageToEncode
+                .chars()
+                .filter(character -> !dictionary.getExcludeChars().contains((char) character))
+                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                .toString();
+
+        if (!dictionary.getDictionary().containsAll(asList(messageToEncodeAfter.split(" ")))){
+            throw new MessageToEncodeIsNotValidException();
+        } else {
+            return messageToEncodeAfter;
+        }
     }
 }
 

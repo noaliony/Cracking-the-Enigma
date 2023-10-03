@@ -1,12 +1,15 @@
 package enums;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public enum ReflectorID {
 
     I, II, III, IV, V;
 
     public static final int size = ReflectorID.values().length;
 
-    public static ReflectorID convertFromStringToReflectorID(String ID) {
+    public static ReflectorID convertStringToReflectorID(String ID) {
 
         ReflectorID result = null;
 
@@ -37,7 +40,7 @@ public enum ReflectorID {
         return result;
     }
 
-    public static int convertFromStringToInt(String ID) {
+    public static int convertStringToInt(String ID) {
 
         int result = 0;
 
@@ -57,6 +60,58 @@ public enum ReflectorID {
                 break;
             case "V":
                 result = 5;
+                break;
+        }
+
+        return result;
+    }
+
+    public static String convertIntegerToString(Integer ID) {
+
+        String result = "";
+
+        switch (ID)
+        {
+            case 1:
+                result = ReflectorID.I.toString();
+                break;
+            case 2:
+                result = ReflectorID.II.toString();
+                break;
+            case 3:
+                result = ReflectorID.III.toString();
+                break;
+            case 4:
+                result = ReflectorID.IV.toString();
+                break;
+            case 5:
+                result = ReflectorID.V.toString();
+                break;
+        }
+
+        return result;
+    }
+
+    public static ReflectorID convertIntToReflectorID(int ID) {
+
+        ReflectorID result = null;
+
+        switch (ID)
+        {
+            case 1:
+                result = ReflectorID.I;
+                break;
+            case 2:
+                result = ReflectorID.II;
+                break;
+            case 3:
+                result = ReflectorID.III;
+                break;
+            case 4:
+                result = ReflectorID.IV;
+                break;
+            case 5:
+                result = ReflectorID.V;
                 break;
         }
 

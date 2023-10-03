@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane fitToHeight="true" fitToWidth="true" style="-fx-background-color: transparent;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tabs.encryptdecrypt.history.MachineHistoryViewController">
+   <content>
+      <VBox alignment="TOP_CENTER" spacing="15.0">
+         <children>
+            <Label contentDisplay="CENTER" text="Machine History" textAlignment="CENTER" underline="true" />
+            <ScrollPane fitToHeight="true" fitToWidth="true" style="-fx-background-color: transparent;">
+               <content>
+                  <HBox fx:id="historyTableHBox" spacing="10.0" />
+               </content>
+            </ScrollPane>
+         </children>
+      </VBox>
+   </content>
+</ScrollPane>

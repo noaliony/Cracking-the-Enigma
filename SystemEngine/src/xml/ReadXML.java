@@ -25,7 +25,7 @@ public class ReadXML {
 
         try {
             InputStream inputStream = new FileInputStream(new File(pathXML));
-            cteEnigma =  deserializeFrom(inputStream);
+            cteEnigma = deserializeFrom(inputStream);
 
         } catch (JAXBException | FileNotFoundException exception) {
             exception.printStackTrace();
@@ -39,12 +39,7 @@ public class ReadXML {
         return (CTEEnigma) unmarshaller.unmarshal(inputStream);
     }
 
-    public static boolean checkIfValidXMLFile(String pathXML) throws NotchInRotorIsNotValidException,
-            ThereIsMappingBetweenLetterAndItselfInReflectorException, RotorIDIsNotValidException,
-            ABCAmountIsNotEvenException, ReflectorsHaveNotUniqueIDException, RotorHaveDoubleMappingsException,
-            RotorsHaveNotUniqueIDException, RotorsCountBiggerThanReceivedRotorsException,
-            ReflectorIDIsNotValidException, RotorsCountSmallerThanTwoException, FileISNotXMLException, FileIsNotExistException,
-            ThereAreNoExistAllRotorsException, ThereAreNoExistAllReflectorsException, InvalidNumberOfRotorsException, InvalidRelectorMapped, InvalidCountReflectorMapped, RotorHaveTooMuchMappingsException, RotorHaveLessMappingsException {
+    public static boolean checkIfValidXMLFile(String pathXML) throws EnigmaLogicException {
 
         Path path = Paths.get(pathXML);
         boolean isValid = checkIfXMLFileExist(path);
@@ -56,21 +51,38 @@ public class ReadXML {
         return isValid;
     }
 
-    private static boolean CTEMachineValidator() throws ThereIsMappingBetweenLetterAndItselfInReflectorException,
-            ReflectorsHaveNotUniqueIDException, ReflectorIDIsNotValidException, NotchInRotorIsNotValidException,
-            RotorHaveDoubleMappingsException, RotorIDIsNotValidException, RotorsHaveNotUniqueIDException,
-            RotorsCountBiggerThanReceivedRotorsException, RotorsCountSmallerThanTwoException, ABCAmountIsNotEvenException,
-            ThereAreNoExistAllRotorsException, ThereAreNoExistAllReflectorsException, InvalidNumberOfRotorsException, InvalidRelectorMapped, InvalidCountReflectorMapped, RotorHaveTooMuchMappingsException, RotorHaveLessMappingsException {
+    private static boolean CTEMachineValidator() throws EnigmaLogicException {
 
-        boolean resultValidator = checkIfABCIsEvenAmount();
+        boolean resultValidator = checkIfDecipherPartExistInXMLFile();
+
+        resultValidator &= checkIfABCIsEvenAmount();
         resultValidator &= checkIfRotorsCountIsValid();
         resultValidator &= checkIfEveryRotorHaveUniqueID();
         resultValidator &= checkIfThereAreNoDoubleMappingsInTheRotors();
         resultValidator &= checkIfTheNotchIsValidInEveryRotor();
         resultValidator &= checkIfEveryReflectorHaveUniqueID();
         resultValidator &= checkIfThereIsNoMappingBetweenLetterAndItselfInEveryReflector();
+        resultValidator &= checkIfAgentsCountIsValid();
 
         return resultValidator;
+    }
+
+    private static boolean checkIfAgentsCountIsValid() throws InvalidAgentsCountException {
+        int agentsCount = cteEnigma.getCTEDecipher().getAgents();
+
+        if (agentsCount < 2 || agentsCount > 50){
+            throw new InvalidAgentsCountException();
+        }
+
+        return true;
+    }
+
+    private static boolean checkIfDecipherPartExistInXMLFile() throws DecipherPartDoesNotExistInXMLFileException {
+        if (cteEnigma.getCTEDecipher() == null){
+            throw new DecipherPartDoesNotExistInXMLFileException();
+        }
+
+        return true;
     }
 
     private static boolean checkIfThereIsNoMappingBetweenLetterAndItselfInEveryReflector() throws ThereIsMappingBetweenLetterAndItselfInReflectorException, InvalidRelectorMapped, InvalidCountReflectorMapped {
@@ -119,11 +131,11 @@ public class ReadXML {
         for (CTEReflector currentCTEReflector : CTEReflectorList) {
 
             idReflectorString = currentCTEReflector.getId();
-            ReflectorID reflectorID = ReflectorID.convertFromStringToReflectorID(idReflectorString);
+            ReflectorID reflectorID = ReflectorID.convertStringToReflectorID(idReflectorString);
 
             if (reflectorsID == null)
                 throw new ReflectorIDIsNotValidException(idReflectorString);
-            reflectorsIDList.add(ReflectorID.convertFromStringToInt(idReflectorString));
+            reflectorsIDList.add(ReflectorID.convertStringToInt(idReflectorString));
             reflectorsID.add(reflectorID);
         }
 
@@ -133,7 +145,7 @@ public class ReadXML {
         for (int i = 0; i < reflectorsIDList.size() - 1; i++) {
 
             if (reflectorsIDList.get(i+1) - reflectorsIDList.get(i) > 1) {
-                ReflectorID bound = ReflectorID.convertFromStringToReflectorID(reflectorsIDList.get(reflectorsIDList.size() - 1).toString());
+                ReflectorID bound = ReflectorID.convertStringToReflectorID(reflectorsIDList.get(reflectorsIDList.size() - 1).toString());
                 throw new ThereAreNoExistAllReflectorsException(bound.toString());
             }
         }

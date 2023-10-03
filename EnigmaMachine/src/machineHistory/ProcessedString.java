@@ -1,18 +1,42 @@
 package machineHistory;
 
+import com.sun.javafx.geom.BaseBounds;
+import com.sun.javafx.geom.transform.BaseTransform;
+import com.sun.javafx.jmx.MXNodeAlgorithm;
+import com.sun.javafx.jmx.MXNodeAlgorithmContext;
+import com.sun.javafx.sg.prism.NGNode;
+import javafx.scene.Node;
+
 import java.io.Serializable;
 
-public class ProcessedString implements Serializable {
+public class ProcessedString extends Node implements Serializable {
 
-    private String input;
-    private String output;
-    private int nanoSeconds;
+    private String input = "";
+    private String output = "";
+    private long nanoSeconds = 0L;
 
-    public ProcessedString(String input, String output, int nanoSeconds) {
+    public ProcessedString(){;}
+
+    public ProcessedString(String input, String output, long nanoSeconds) {
 
         this.input = input;
         this.output = output;
         this.nanoSeconds = nanoSeconds;
+    }
+
+    @Override
+    protected NGNode impl_createPeer() {
+        return null;
+    }
+
+    @Override
+    public BaseBounds impl_computeGeomBounds(BaseBounds bounds, BaseTransform tx) {
+        return null;
+    }
+
+    @Override
+    protected boolean impl_computeContains(double localX, double localY) {
+        return false;
     }
 
     public String getInput() {
@@ -23,7 +47,7 @@ public class ProcessedString implements Serializable {
         return output;
     }
 
-    public int getNanoSeconds() {
+    public long getNanoSeconds() {
         return nanoSeconds;
     }
 
@@ -35,7 +59,7 @@ public class ProcessedString implements Serializable {
         this.output = output;
     }
 
-    public void setNanoSeconds(int nanoSeconds) {
+    public void setNanoSeconds(long nanoSeconds) {
         this.nanoSeconds = nanoSeconds;
     }
 
@@ -53,5 +77,10 @@ public class ProcessedString implements Serializable {
         result.append(")");
 
         return result.toString();
+    }
+
+    @Override
+    public Object impl_processMXNode(MXNodeAlgorithm alg, MXNodeAlgorithmContext ctx) {
+        return null;
     }
 }

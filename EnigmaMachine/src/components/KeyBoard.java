@@ -1,5 +1,7 @@
 package components;
 
+import machine.Machine;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;

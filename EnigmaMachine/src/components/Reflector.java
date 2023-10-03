@@ -5,7 +5,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Reflector implements Serializable {
+public class Reflector implements Serializable, Cloneable {
 
     private List<Integer> reflectorArray = new ArrayList<>();
     private ReflectorID id;
@@ -25,7 +25,7 @@ public class Reflector implements Serializable {
     @Override
     public String toString()
     {
-        String result = new String();
+        String result;
 
         result = "Reflector #" + id +":" + "\n";
         for (Integer currInt : reflectorArray)
@@ -38,12 +38,24 @@ public class Reflector implements Serializable {
 
         int numToSearch = reflectorArray.get(newIndexReflector);
 
-        for (int i = 0; i < reflectorArray.size(); i++)
-        {
+        for (int i = 0; i < reflectorArray.size(); i++) {
             if (reflectorArray.get(i) == numToSearch && i != newIndexReflector)
                 return i;
         }
 
-        return  -1;
+        return -1;
+    }
+
+    @Override
+    public Reflector clone() {
+        try {
+            Reflector clone = (Reflector) super.clone();
+
+            clone.reflectorArray = new ArrayList<>(this.reflectorArray);
+
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 }

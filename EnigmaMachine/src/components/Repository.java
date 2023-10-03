@@ -2,9 +2,10 @@ package components;
 import enums.ReflectorID;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
-public class Repository implements Serializable {
+public class Repository implements Serializable, Cloneable {
 
     private List<Rotor> rotorsList;
     private List<Integer> rotorsNotch;
@@ -46,7 +47,7 @@ public class Repository implements Serializable {
         for (Rotor currRotor : rotorsList)
             result = result.concat(currRotor.toString());
 
-        for(Reflector currReflector : reflectorsList)
+        for (Reflector currReflector : reflectorsList)
             result = result.concat((currReflector.toString()));
 
         return result;
@@ -60,5 +61,31 @@ public class Repository implements Serializable {
     public int getAmountOfReflectorsInRepository() {
 
         return reflectorsList.size();
+    }
+
+    public int getAmountOfRotors() {
+        return rotorsList.size();
+    }
+
+    public List<ReflectorID> getReflectorIDsList() {
+        List<ReflectorID> reflectorIDsList = new ArrayList<>();
+
+        reflectorsList.forEach(reflector -> reflectorIDsList.add(reflector.getID()));
+
+        return reflectorIDsList;
+    }
+
+    @Override
+    public Repository clone() {
+        try {
+            Repository clone = (Repository) super.clone();
+
+            clone.rotorsList = new ArrayList<>();
+            rotorsList.forEach(rotor -> clone.rotorsList.add(rotor.clone()));
+
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 }

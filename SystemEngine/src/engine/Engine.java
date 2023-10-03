@@ -1,36 +1,50 @@
 package engine;
 
 import components.Rotor;
+import decryption.manager.DMInformationFromUser;
+import decryption.manager.DecryptionManager;
 import enums.ReflectorID;
 import exceptions.*;
 import machine.Machine;
-import machine.MachineSetting;
+import machine.details.ConfigurationDetails;
+import machine.details.MachineDetailsObject;
+import machine.details.MachineSetting;
 import machineHistory.MachineHistory;
 import machineHistory.ProcessedString;
 import xml.MachineBuilder;
 import xml.ReadXML;
 import generated.CTEEnigma;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.*;
 
 public class Engine {
 
     private int MAX_NUMBERS_OF_ROTORS_IN_USE = 99;
-    Machine machine = null;
+    private Machine machine = null;
+    private DecryptionManager DM;
 
-    public Machine readSystemDetailsFile(String pathXML) throws NotchInRotorIsNotValidException, ABCAmountIsNotEvenException,
-            ReflectorsHaveNotUniqueIDException, RotorsHaveNotUniqueIDException, FileISNotXMLException, RotorsCountSmallerThanTwoException,
-            FileIsNotExistException, ThereIsMappingBetweenLetterAndItselfInReflectorException, RotorIDIsNotValidException,
-            RotorHaveDoubleMappingsException, RotorsCountBiggerThanReceivedRotorsException, ReflectorIDIsNotValidException,
-            ThereAreNoExistAllRotorsException, ThereAreNoExistAllReflectorsException, InvalidNumberOfRotorsException, InvalidCountReflectorMapped, InvalidRelectorMapped, RotorHaveTooMuchMappingsException, RotorHaveLessMappingsException {
+    public void loadXMLFileToMachine(String pathXML) throws EnigmaLogicException {
+        machine = readSystemDetailsFile(pathXML);
+    }
+
+    public void updateManualSetting(){
+        resetCurrentNotchAndPosition();
+        manualSetting();
+        addMachineSetting();
+    }
+
+    public void updateAutomaticSetting(){
+        resetCurrentNotchAndPosition();
+        getRandomSetting();
+        addMachineSetting();
+    }
+
+    public Machine readSystemDetailsFile(String pathXML) throws EnigmaLogicException {
 
         boolean isValidFile =  ReadXML.checkIfValidXMLFile(pathXML);
         MachineBuilder machineBuilder = new MachineBuilder();
@@ -43,7 +57,7 @@ public class Engine {
     public void manualSetting() {
 
         MachineSetting machineSetting = machine.getOriginalMachineSetting();
-        String rotorsID = machineSetting.getRotorsID();
+        String rotorsID = machineSetting.getRotorIDs();
         String startingPosition = machineSetting.getPosition();
         String reflectorID = machineSetting.getReflectorID();
         String plugPairs = machineSetting.getPlugPairs();
@@ -52,6 +66,8 @@ public class Engine {
         List<Character> rotorStartPosition;
         ReflectorID reflectorIdToUse;
         Map<Character,Character> plugPairsToUse;
+        ConfigurationDetails configurationDetails;
+        String rotorsNotch;
 
         rotorsIdToUse = new ArrayList<>();
         arrayOfStringsToRotorsID = rotorsID.split("," , MAX_NUMBERS_OF_ROTORS_IN_USE);
@@ -63,7 +79,7 @@ public class Engine {
         for (int i = 0; i < startingPosition.length(); i++)
             rotorStartPosition.add(startingPosition.charAt(i));
 
-        reflectorIdToUse =  ReflectorID.convertFromStringToReflectorID(reflectorID);
+        reflectorIdToUse =  ReflectorID.convertStringToReflectorID(reflectorID);
 
         plugPairsToUse = machine.getPlugPairs();
         for (int i = 0; i < plugPairs.length(); i+=2) {
@@ -74,10 +90,12 @@ public class Engine {
             plugPairsToUse.replace(key, value);
             plugPairsToUse.replace(value, key);
         }
-        machine.setCode(rotorsIdToUse, rotorStartPosition, reflectorIdToUse, plugPairsToUse);
 
-       String rotorsNotch = updateNotchInRotorsInUse();
-       machine.setRotorsNotchInOriginalAndCurrentMachineSetting(rotorsNotch);
+        configurationDetails = new ConfigurationDetails(rotorsIdToUse, rotorStartPosition, reflectorIdToUse, plugPairsToUse);
+        machine.setCode(configurationDetails);
+
+        rotorsNotch = updateNotchInRotorsInUse();
+        machine.setRotorsNotchInOriginalAndCurrentMachineSetting(rotorsNotch);
 
     }
 
@@ -92,14 +110,15 @@ public class Engine {
         List<Character> rotorStartPosition = getRandomStartingPosition();
         ReflectorID reflectorIdToUse = getRandomReflectorID();
         Map<Character, Character> plugPairsToUse = getRandomPlugBoard();
+        ConfigurationDetails configurationDetails = new ConfigurationDetails(rotorsIdToUse, rotorStartPosition, reflectorIdToUse, plugPairsToUse);
 
-        machine.setCode(rotorsIdToUse, rotorStartPosition, reflectorIdToUse, plugPairsToUse);
+        machine.setCode(configurationDetails);
 
-        setRandomMachineSetting(rotorsIdToUse, rotorStartPosition, reflectorIdToUse, plugPairsToUse);
+        setMachineSetting(rotorsIdToUse, rotorStartPosition, reflectorIdToUse, plugPairsToUse);
     }
 
-    private void setRandomMachineSetting(List<Integer> rotorsIdToUse, List<Character> rotorStartPosition,
-                                         ReflectorID reflectorIdToUse, Map<Character, Character> plugPairsToUse) {
+    public void setMachineSetting(List<Integer> rotorsIdToUse, List<Character> rotorStartPosition,
+                                   ReflectorID reflectorIdToUse, Map<Character, Character> plugPairsToUse) {
 
         String rotorsID = createStringIDRotors(rotorsIdToUse);
         String rotorsNotch = createRotorsNotch(rotorsID, getRotorsListInRepository());
@@ -107,7 +126,7 @@ public class Engine {
         String reflectorID = reflectorIdToUse.toString();
         String plugPairs = createPlugPairs(plugPairsToUse);
 
-        setMachineSetting(rotorsID, rotorsNotch, startingPosition, reflectorID, plugPairs);
+        setMachineSettingStringsParameters(rotorsID, rotorsNotch, startingPosition, reflectorID, plugPairs);
     }
 
     private String createPlugPairs(Map<Character, Character> plugPairsToUse) {
@@ -119,7 +138,7 @@ public class Engine {
             String key = entry.getKey().toString();
             String value = entry.getValue().toString();
 
-            if (plugPairsString.contains(key) == false && !key.equals(value)) {
+            if (plugPairsString.contains(key) == false && plugPairsString.contains(value) == false && !key.equals(value)) {
 
                 plugPairsString = plugPairsString.concat(key);
                 plugPairsString = plugPairsString.concat(value);
@@ -174,9 +193,7 @@ public class Engine {
         return rotorsIDString.substring(0, rotorsIDString.length() - 1);
     }
 
-
     private Map<Character, Character> getRandomPlugBoard() {
-
         Random random = new Random();
         Map<Character, Character> plugPairsToUse;
         List<Character> charactersInUseInPlugBoard = new ArrayList<>();
@@ -231,7 +248,7 @@ public class Engine {
 
         randomIndex = 1 + random.nextInt(machine.getAmountOfReflectorsInRepository());
         randomReflectorID = randomIndex.toString();
-        reflectorID = ReflectorID.convertFromStringToReflectorID(randomReflectorID);
+        reflectorID = ReflectorID.convertStringToReflectorID(randomReflectorID);
 
         return reflectorID;
     }
@@ -282,7 +299,6 @@ public class Engine {
     }
 
     public List<Integer> createRotorsIDOptionalInRepository(List<Rotor> rotorsListInRepository) {
-
         List<Integer> rotorsIDOptionalInRepository = new ArrayList<>();
 
         for (Rotor currentRotor : rotorsListInRepository)
@@ -292,7 +308,6 @@ public class Engine {
     }
 
     public List<Integer> createRotorsIDInUse(List<Rotor> rotorsIDInUse) {
-
         List<Integer> rotorsIDInUseList = new ArrayList<>();
 
         for (Rotor currentRotor : rotorsIDInUse)
@@ -305,25 +320,45 @@ public class Engine {
         this.machine = machineFromCTEEnigma;
     }
 
-    public char inputProcess(char charToEncodeFromUser){
-        return machine.inputProcess(charToEncodeFromUser);
-    }
+    public String encodingStringInput(String stringToEncodeFromUser, boolean inKeyByKeyMode) {
+        if (!checkIfTheInputValid(stringToEncodeFromUser.toUpperCase())){
+            throw new MessageForCodingNotValidException(getAlphabet());
+        }
 
-    public String encodingStringInput(String stringToEncodeFromUser) {
-
+        Duration totalTime;
         Character isEncoded;
         String stringOutput = "";
+        Long nanoSecondTimeTookToProcessedString;
 
-        for (int i = 0; i < stringToEncodeFromUser.length(); i++) {
-            isEncoded = inputProcess(stringToEncodeFromUser.charAt(i));
-            stringOutput = stringOutput.concat(isEncoded.toString());
+        stringToEncodeFromUser = stringToEncodeFromUser.toUpperCase();
+        machine.resetStartTimeToEncodedString();
+        stringOutput = machine.encodeFullMessage(stringToEncodeFromUser);
+        nanoSecondTimeTookToProcessedString = getNanoSecondThatStringWasProcessed();
+
+        if (!inKeyByKeyMode) {
+            machine.advanceAmountOfIsEncodedMessages();
+            addProcessedStringToListInMachineHistory(stringToEncodeFromUser, stringOutput, getNanoSecondThatStringWasProcessed());
+        } else {
+            ProcessedString processedString = machine.getCurrentProcessedString();
+
+            processedString.setInput(processedString.getInput().concat(stringToEncodeFromUser));
+            processedString.setOutput(processedString.getOutput().concat(stringOutput));
+            processedString.setNanoSeconds(nanoSecondTimeTookToProcessedString + processedString.getNanoSeconds());
         }
-        machine.advanceAmountOfIsEncodedMessages();
+        updateCurrentMachineSetting();
 
         return stringOutput;
     }
 
-    public void setMachineSetting(String rotorsID, String rotorsNotch, String startingPosition, String reflectorID, String plugPairs) {
+    public void insertCurrentProcessedStringToMachineHistory(){
+        machine.insertCurrentProcessedStringToMachineHistoryList();
+    }
+
+    public long getNanoSecondThatStringWasProcessed(){
+        return machine.getNanoSecondThatStringWasProcessed();
+    }
+
+    public void setMachineSettingStringsParameters(String rotorsID, String rotorsNotch, String startingPosition, String reflectorID, String plugPairs) {
 
         machine.setMachineSetting(rotorsID, rotorsNotch, startingPosition, reflectorID, plugPairs);
     }
@@ -333,11 +368,12 @@ public class Engine {
         machine.addMachineSetting();
     }
 
-    public void addProcessedStringToListInMachineHistory(String stringToEncodeFromUser, String stringOutput, int nano) {
+    public void addProcessedStringToListInMachineHistory(String stringToEncodeFromUser, String stringOutput, Long nano) {
 
         ProcessedString processedString = new ProcessedString(stringToEncodeFromUser, stringOutput, nano);
 
         machine.getCurrentIsEncodedStringList().add(processedString);
+        machine.updateCurrenProcessedStringInCurrentMachineHistory(processedString);
     }
 
     public void updateCurrentMachineSetting() {
@@ -390,7 +426,7 @@ public class Engine {
         machine.resetCurrentNotchAndPosition();
     }
 
-    public boolean checkIFTheInputValid(String stringToEncode) {
+    public boolean checkIfTheInputValid(String stringToEncode) {
 
         boolean checkValidity = stringToEncode.length() > 0;
 
@@ -399,31 +435,6 @@ public class Engine {
         }
 
         return checkValidity;
-    }
-
-    public void saveMachineToFile(String filePathFromUser) throws RuntimeException {
-
-        filePathFromUser = filePathFromUser.concat(".sun");
-        try (ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(Paths.get(filePathFromUser)))) {
-            out.writeObject(machine);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not save the machine to the provided path. Please insert a new path.");
-        }
-    }
-
-    public void loadMachineFromFile(String filePathFromUser) {
-
-        filePathFromUser = filePathFromUser.concat(".sun");
-        try {
-            checkFilePath(filePathFromUser, ".sun");
-        } catch (Exception e) {
-            throw new RuntimeException("Error - Could not load a machine from the specified file!");
-        }
-        try (ObjectInputStream in = new ObjectInputStream(Files.newInputStream(Paths.get(filePathFromUser)))) {
-            machine = (Machine) in.readObject();
-        } catch (Exception e) {
-            throw new RuntimeException("Error - Could not load a machine from the specified file!");
-        }
     }
 
     public void checkFilePath(String xmlFilePath, String requiredFileExtension) throws RuntimeException {
@@ -444,21 +455,79 @@ public class Engine {
         }
     }
 
-
-
-    public String getPathWithFileNameFromUserForSaveAndLoad() {
-
-        String newLine = System.lineSeparator();
-        System.out.println(newLine + "Please enter path with file name (without extension): ");
-        Scanner scanner = new Scanner(System.in);
-        String pathFromUser = scanner.nextLine();
-
-        return pathFromUser;
-    }
-
     public boolean isCodeSet(){
-
         return machine.isCodeSet();
     }
 
+    public MachineDetailsObject getMachineDetails() {
+        return machine.getMachineDetailsObject();
+    }
+
+    public MachineSetting getCurrentMachineSetting(){
+        return machine.getCurrentMachineSetting();
+    }
+
+    public MachineHistory getCurrentMachineHistory() {
+        return machine.getCurrentMachineHistory();
+    }
+
+    public Machine getMachine() {
+        return machine;
+    }
+
+    public int calculateTasksCount(DMInformationFromUser informationFromUser) throws MessageToEncodeIsNotValidException {
+        try {
+            String messageToEncode = validatorMessageToEncode(informationFromUser.getOriginalMessage());
+            String messageToDecode = encodingStringInput(messageToEncode, false);
+
+            informationFromUser.setMessageToEncode(messageToEncode);
+            informationFromUser.setMessageToDecode(messageToDecode);
+            DM = createDM(informationFromUser);
+
+            return DM.getTasksCount();
+        } catch (MessageToEncodeIsNotValidException exception) {
+            throw exception;
+        }
+    }
+
+    public DecryptionManager createDM(DMInformationFromUser informationFromUser){
+        return new DecryptionManager(informationFromUser, machine);
+    }
+
+    public String validatorMessageToEncode(String messageToEncode) throws MessageToEncodeIsNotValidException {
+        return machine.validatorMessageToEncode(messageToEncode);
+    }
+
+    public void runDM() {
+        DM.runDM();
+    }
+
+    public String getMessageToEncodeFromDM() {
+        return DM.getMessageToEncode();
+    }
+
+    public ConfigurationDetails getReceivedConfigurationDetailsFromDM() {
+        return DM.getReceivedConfigurationDetails();
+    }
+
+    public Set<String> getDictionary() {
+        return machine.getDictionary().getDictionary();
+    }
+
+    public int getMaxValueAgentsCount() {
+        return machine.getMaxValueAgentsCount();
+    }
+
+    public void resumeAllThreads() {
+        DM.setPauseButtonClicked(false);
+        DM.resumeAllThreads();
+    }
+
+    public void pauseAllThreads() {
+        DM.setPauseButtonClicked(true);
+    }
+
+    public void stopAllThreads(){
+        DM.stopAllThreads();
+    }
 }

@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Rotor implements Serializable {
+public class Rotor implements Serializable, Cloneable {
 
     private int notch;
     private int startingNotch;
@@ -108,5 +108,16 @@ public class Rotor implements Serializable {
     public int getStartingNotch() {
 
         return startingNotch;
+    }
+
+    @Override
+    public Rotor clone() {
+        try {
+            Rotor clone = (Rotor) super.clone();
+
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 }

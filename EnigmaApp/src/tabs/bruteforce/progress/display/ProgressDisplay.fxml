@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane fitToHeight="true" fitToWidth="true" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tabs.bruteforce.progress.display.ProgressDisplayController">
+   <content>
+      <VBox alignment="TOP_CENTER" spacing="15.0">
+         <children>
+            <HBox alignment="CENTER" spacing="10.0">
+               <children>
+                  <Button fx:id="pauseButton" mnemonicParsing="false" text="Pause" />
+                  <Button fx:id="resumeButton" mnemonicParsing="false" text="Resume" />
+                  <Button fx:id="stopButton" mnemonicParsing="false" text="Stop" />
+               </children>
+            </HBox>
+            <HBox spacing="10.0">
+               <children>
+                  <Label text="Tasks Completed: " />
+                  <Label fx:id="completedTasksCountValueLabel" />
+                  <Label layoutX="10.0" layoutY="10.0" text="/" />
+                  <Label fx:id="tasksCountValueLabel" />
+               </children>
+            </HBox>
+            <VBox>
+               <children>
+                  <Label text="Progress:" />
+                  <AnchorPane VBox.vgrow="ALWAYS">
+                     <children>
+                        <ProgressBar fx:id="bruteForceProgressBar" prefWidth="200.0" progress="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
+                     </children>
+                  </AnchorPane>
+               </children>
+            </VBox>
+            <VBox>
+               <children>
+                  <Label text="Decrypted Candidates:" />
+               </children>
+            </VBox>
+            <TableView fx:id="decryptedCandidatesTableView">
+              <columns>
+                <TableColumn fx:id="agentIDCol" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="150.0" text="Agent ID" />
+                <TableColumn fx:id="decryptedMessageCol" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="200.0" text="Decrypted Candidate Message" />
+                  <TableColumn fx:id="settingsCol" maxWidth="1.7976931348623157E308" minWidth="-1.0" prefWidth="300.0" text="Settings" />
+              </columns>
+            </TableView>
+         </children>
+         <padding>
+            <Insets left="10.0" />
+         </padding>
+      </VBox>
+   </content>
+</ScrollPane>
